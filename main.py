@@ -29,6 +29,9 @@ class DefaultExperimentArguments:
 
     Gym_total_timesteps: int = 1e6
     Gym_eval_freq: int = 5e3
+    
+    FlappyGym_total_timesteps: int = 5e5
+    FlappyGym_eval_freq: int = 5e3
 
     def __post_init__(self): utils.enforce_dataclass_type(self)
 

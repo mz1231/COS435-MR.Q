@@ -15,6 +15,8 @@ import numpy as np
 
 import utils
 
+import flappy_bird_gym
+
 # Used by Atari
 # import ale_py
 # import cv2
@@ -273,3 +275,31 @@ class AtariPreprocessing:
         obs = self.get_obs()
         self.history_queue.append(obs)
         return np.concatenate(self.history_queue), reward, terminal, self.frames == self.max_ep_frames, info
+
+class FlappyGymPreprocessing:
+    def __init__(self, env_name: str, seed: int=0, eval_env: bool=False):
+        self.env = flappy_bird_gym.make(env_name.replace('FlappyGym-', ''))
+        self.env.reset()
+
+        self.offline = False
+        self.pixel_obs = False
+        self.obs_shape = self.env.observation_space.shape
+        self.history = 1
+        self.max_ep_timesteps = self.env.spec.max_episode_steps
+        self.action_space = self.env.action_space
+        self.timestep = 0
+        
+        self.action_mask = None
+
+
+    def step(self, action: int | float):
+        self.timestep += 1
+        s, r, done, info = self.env.step(action)
+        truncated = self.timestep == self.max_ep_timesteps
+        return s, r, done, truncated, info
+
+    def reset(self):
+        self.timestep = 0
+        ret = self.env.reset()
+        # print(ret)
+        return ret, {}
