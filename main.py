@@ -1,10 +1,11 @@
+# Adapted from main.py from original MR.Q paper (Fujimoto et. al)
+
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-# Adapted from main.py from original MR.Q paper (Fujimoto et. al)
 import argparse
 import dataclasses
 import os
@@ -74,7 +75,7 @@ def main():
     eval_env = env_preprocessing.Env(args.env, args.seed+100, eval_env=True) # +100 to make sure the seed is different.
 
     agent = MRQ_DAZ.Agent(env.obs_shape, env.action_dim, env.max_action,
-        env.pixel_obs, env.discrete, device, env.history)
+        env.pixel_obs, env.discrete, env.multi_discrete, device, env.history)
 
     logger = utils.Logger(f'{args.log_folder}/{args.project_name}.txt')
 

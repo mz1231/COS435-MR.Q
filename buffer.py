@@ -1,3 +1,4 @@
+# This was directly taken from the from original MR.Q paper (Fujimoto et. al) 
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 

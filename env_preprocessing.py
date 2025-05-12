@@ -1,3 +1,5 @@
+# Adapted from env_processing.py from original MR.Q paper (Fujimoto et. al)
+
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 
@@ -44,9 +46,14 @@ class Env:
 
         self.action_space.seed(seed)
         self.discrete = self.action_space.__class__.__name__ == 'Discrete'
-        self.action_dim = self.action_space.n if self.discrete else self.action_space.shape[0]
-        self.max_action = 1 if self.discrete else float(self.action_space.high[0])
-
+        self.multi_discrete = self.action_space.__class__.__name__ == 'MultiDiscrete'
+        if self.multi_discrete:
+            self.action_dim = len(self.action_space.nvec)
+            self.max_action = self.action_space.nvec - 1
+        else:
+            self.action_dim = self.action_space.n if self.discrete else self.action_space.shape[0]
+            self.max_action = 1 if self.discrete else float(self.action_space.high[0])
+        
         self.remove_info = remove_info
         self.ep_total_reward = 0
         self.ep_timesteps = 0
@@ -301,5 +308,67 @@ class FlappyGymPreprocessing:
     def reset(self):
         self.timestep = 0
         ret = self.env.reset()
-        # print(ret)
         return ret, {}
+
+
+# Below is code for the jumanji environment, but due to incompatibilities 
+# between jaxlib (a required library for jumanji) and cuda on adroit, 
+# we weren't able to get results so it was removed from our paper
+
+# @dataclasses.dataclass
+# class JumanjiHyperparameters:
+#     max_ep_frames: int = 108e3
+#     action_repeat: int = 4
+#     def __post_init__(self): utils.enforce_dataclass_type(self)
+
+# class JumanjiPreprocessing:
+#     def __init__(self, env_name: str, seed: int=0, eval_env: bool=False, hp: Dict={}):
+#         self.hp = JumanjiHyperparameters(**hp)
+#         self.env = jumanji.make(env_name.replace('Jumanji-', ''))
+#         self.key = jax.random.PRNGKey(seed)
+#         state, timestep = jax.jit(self.env.reset)(self.key)
+#         self.state = state
+#         self.action_mask = np.array(timestep.observation.action_mask)
+
+#         self.offline = False
+#         self.pixel_obs = False
+#         # print("OBS SHAPE:", self.env.observation_spec.board.shape)
+#         self.obs_shape = (self.env.observation_spec.board.shape[0]**2, 1)
+#         self.history = 1
+#         self.max_ep_timesteps = 1000
+#         self.curr_step = 0
+
+#         action_spec = self.env.action_spec
+#         if hasattr(action_spec, "num_values"):
+#             self.action_space = gym.spaces.MultiDiscrete(action_spec.num_values)
+#         else:
+#             self.action_space = gym.spaces.Box(
+#                 low=np.array(action_spec.minimum),
+#                 high=np.array(action_spec.maximum),
+#                 dtype=np.array(action_spec.minimum).dtype,
+#             )
+            
+#     def _flatten_obs(self, obs_tree):
+#         leaves = jax.tree_util.tree_leaves(obs_tree)
+#         return np.concatenate([np.ravel(np.asarray(leaf)) for leaf in leaves]).astype(np.float32)
+
+#     def step(self, action: int | float):
+#         self.curr_step += 1
+#         self.state, timestep = jax.jit(self.env.step)(self.state, action)
+#         self.action_mask = np.array(timestep.observation.action_mask)
+
+#         # determine termination
+#         terminated = timestep.last()
+#         truncated = self.curr_step >= self.max_ep_timesteps
+        
+#         ret = (self._flatten_obs(timestep.observation), timestep.reward, terminated, truncated, {"info": timestep.extras})
+#         return (np.array(x) for x in ret)
+
+
+#     def reset(self):
+#         self.curr_step = 0
+#         key, reset_key = jax.random.split(self.key)
+#         self.state, timestep = jax.jit(self.env.reset)(reset_key)
+#         self.action_mask = np.array(timestep.observation.action_mask)
+        
+#         return np.array(self._flatten_obs(timestep.observation)), {}

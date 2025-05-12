@@ -6,7 +6,7 @@ import networks
 import copy
 
 class Agent:
-    def __init__(self, obs_shape: tuple, action_dim: int, max_action: float, pixel_obs: bool, discrete: bool,
+    def __init__(self, obs_shape: tuple, action_dim: int, max_action: float, pixel_obs: bool, discrete: bool, multi_discrete: bool,
         device: torch.device, history):
 
         self.obs_shape = obs_shape
@@ -14,6 +14,7 @@ class Agent:
         self.max_action = max_action
         self.pixel_obs = pixel_obs
         self.discrete = discrete
+        self.multi_discrete = multi_discrete
         self.device = device
         self.history = history
 
@@ -87,6 +88,10 @@ class Agent:
                 action += torch.randn_like(action) * self.exploration_noise
             if self.discrete:
                 return int(action.argmax())
+            elif self.multi_discrete:
+                action_probs = torch.softmax(action, dim=-1).cpu().data.numpy()
+                action_probs /= action_probs.sum(axis=-1, keepdims=True)
+                return np.array([int(action.argmax()) for i in range(self.action_dim)])
             else:
                 return action.clamp(-1,1).cpu().data.numpy().flatten() * self.max_action
 
